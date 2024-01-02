@@ -15,11 +15,11 @@ import HealthKit
 class xDripStatusModel: NSObject, ObservableObject {
     
     let cgmManager: xDripCGMManager
-    let displayGlucosePreference: DisplayGlucosePreference
+    let glucoseUnitObservable: DisplayGlucoseUnitObservable
     var hasCompleted: (() -> Void)?
     
     var preferredUnit: HKUnit {
-        return displayGlucosePreference.unit
+        return glucoseUnitObservable.displayGlucoseUnit
     }
     
     var latestReading: xDripReading? {
@@ -27,7 +27,8 @@ class xDripStatusModel: NSObject, ObservableObject {
     }
     
     lazy var unitFormatter: QuantityFormatter = {
-        let formatter = QuantityFormatter(for: preferredUnit)
+        let formatter = QuantityFormatter()
+        formatter.setPreferredNumberFormatter(for: preferredUnit)
         return formatter
     }()
 
@@ -39,9 +40,9 @@ class xDripStatusModel: NSObject, ObservableObject {
         return formatter
     }()
     
-    init(cgmManager: xDripCGMManager, for displayGlucosePreference: DisplayGlucosePreference) {
+    init(cgmManager: xDripCGMManager, for glucoseUnitObservable: DisplayGlucoseUnitObservable) {
         self.cgmManager = cgmManager
-        self.displayGlucosePreference = displayGlucosePreference
+        self.glucoseUnitObservable = glucoseUnitObservable
     }
     
     func notifyDeletion() {

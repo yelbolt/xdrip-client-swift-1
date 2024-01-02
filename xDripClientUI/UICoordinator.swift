@@ -15,7 +15,7 @@ import xDripClient
 class UICoordinator: UINavigationController, CGMManagerOnboarding, CompletionNotifying, UINavigationControllerDelegate {
     
     let cgmManager: xDripCGMManager?
-    let displayGlucosePreference: DisplayGlucosePreference?
+    let glucoseUnitObservable: DisplayGlucoseUnitObservable?
     let colorPalette: LoopUIColorPalette
     
     weak var cgmManagerOnboardingDelegate: CGMManagerOnboardingDelegate?
@@ -23,13 +23,12 @@ class UICoordinator: UINavigationController, CGMManagerOnboarding, CompletionNot
     
     init(
         cgmManager: xDripCGMManager? = nil,
-        displayGlucosePreference: DisplayGlucosePreference? = nil,
+        glucoseUnitObservable: DisplayGlucoseUnitObservable? = nil,
         colorPalette: LoopUIColorPalette
     ) {
         self.colorPalette = colorPalette
-        self.displayGlucosePreference = displayGlucosePreference
+        self.glucoseUnitObservable = glucoseUnitObservable
         self.cgmManager = cgmManager
-        
         super.init(navigationBarClass: UINavigationBar.self, toolbarClass: UIToolbar.self)
     }
     
@@ -41,11 +40,6 @@ class UICoordinator: UINavigationController, CGMManagerOnboarding, CompletionNot
         super.viewDidLoad()
         navigationBar.prefersLargeTitles = true
         delegate = self
-        
-        if let cgmManager = cgmManager {
-            setupCompletion(cgmManager)
-        }
-
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -60,10 +54,10 @@ class UICoordinator: UINavigationController, CGMManagerOnboarding, CompletionNot
     private func viewController(willShow view: ControllerType) -> UIViewController {
         switch view {
         case .status:
-            guard let cgmManager = cgmManager, let displayGlucosePreference = displayGlucosePreference else {
+            guard let cgmManager = cgmManager, let observable = glucoseUnitObservable else {
                 fatalError()
             }
-            let model = xDripStatusModel(cgmManager: cgmManager, for: displayGlucosePreference)
+            let model = xDripStatusModel(cgmManager: cgmManager, for: observable)
             model.hasCompleted = { [weak self] in
                 self?.notifyCompletion()
             }
@@ -73,18 +67,17 @@ class UICoordinator: UINavigationController, CGMManagerOnboarding, CompletionNot
         }
     }
     
-    private func viewController<Content: View>(rootView: Content) -> DismissibleHostingController<some View> {
-        return DismissibleHostingController(content: rootView, colorPalette: colorPalette)
+    
+    private func viewController<Content: View>(rootView: Content) -> DismissibleHostingController {
+        return DismissibleHostingController(rootView: rootView, colorPalette: colorPalette)
     }
     
     private func setupCompletion(_ cgmManager: xDripCGMManager) {
         cgmManagerOnboardingDelegate?.cgmManagerOnboarding(didCreateCGMManager: cgmManager)
-        cgmManagerOnboardingDelegate?.cgmManagerOnboarding(didOnboardCGMManager: cgmManager)
         completionDelegate?.completionNotifyingDidComplete(self)
     }
     
     private func notifyCompletion() {
         completionDelegate?.completionNotifyingDidComplete(self)
     }
-    
 }
